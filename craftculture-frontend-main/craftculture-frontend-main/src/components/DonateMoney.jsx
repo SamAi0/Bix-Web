@@ -20,45 +20,65 @@ const DonateMoney = () => {
     const newErrors = {};
 
     // Name validation
-    if (!formData.name.trim()) {
+    if (!formData.name || typeof formData.name !== 'string' || !formData.name.trim()) {
       newErrors.name = "Name is required";
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = "Name is too long";
     }
 
     // Phone validation
-    const phoneRegex = /^\+?[\d\s-()]{8,}$/;
-    if (!phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone = "Please enter a valid phone number";
+    if (!formData.phone || typeof formData.phone !== 'string' || !formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else {
+      const phoneRegex = /^\+?[\d\s-()]{8,}$/;
+      if (!phoneRegex.test(formData.phone.trim())) {
+        newErrors.phone = "Please enter a valid phone number";
+      }
     }
 
     // Amount validation
     const amount = parseFloat(formData.amount);
-    if (!amount || amount <= 0) {
+    if (isNaN(amount) || amount <= 0) {
       newErrors.amount = "Please enter a valid amount";
+    } else if (amount > 999999) { // Maximum donation amount
+      newErrors.amount = "Amount is too large";
     }
 
     // Card number validation (16 digits, can have spaces)
-    const cardNumber = formData.cardNumber.replace(/\s/g, "");
-    if (!/^\d{16}$/.test(cardNumber)) {
-      newErrors.cardNumber = "Please enter a valid 16-digit card number";
+    if (!formData.cardNumber || typeof formData.cardNumber !== 'string') {
+      newErrors.cardNumber = "Card number is required";
+    } else {
+      const cardNumber = formData.cardNumber.replace(/\s/g, "");
+      if (!/^\d{16}$/.test(cardNumber)) {
+        newErrors.cardNumber = "Please enter a valid 16-digit card number";
+      }
     }
 
     // Expiry date validation (MM/YY format)
-    const expiryRegex = /^(0[1-9]|1[0-2])\/([0-9]{2})$/;
-    if (!expiryRegex.test(formData.expiryDate)) {
-      newErrors.expiryDate = "Please enter a valid expiry date (MM/YY)";
+    if (!formData.expiryDate || typeof formData.expiryDate !== 'string') {
+      newErrors.expiryDate = "Expiry date is required";
     } else {
-      // Check if card is not expired
-      const [month, year] = formData.expiryDate.split("/");
-      const expiry = new Date(2000 + parseInt(year), parseInt(month) - 1);
-      const today = new Date();
-      if (expiry < today) {
-        newErrors.expiryDate = "Card has expired";
+      const expiryRegex = /^(0[1-9]|1[0-2])\/([0-9]{2})$/;
+      if (!expiryRegex.test(formData.expiryDate)) {
+        newErrors.expiryDate = "Please enter a valid expiry date (MM/YY)";
+      } else {
+        // Check if card is not expired
+        const [month, year] = formData.expiryDate.split("/");
+        const expiry = new Date(2000 + parseInt(year), parseInt(month) - 1);
+        const today = new Date();
+        if (expiry < today) {
+          newErrors.expiryDate = "Card has expired";
+        }
       }
     }
 
     // CVV validation (3 digits)
-    if (!/^\d{3}$/.test(formData.cvv)) {
-      newErrors.cvv = "Please enter a valid 3-digit CVV";
+    if (!formData.cvv || typeof formData.cvv !== 'string') {
+      newErrors.cvv = "CVV is required";
+    } else {
+      if (!/^\d{3}$/.test(formData.cvv)) {
+        newErrors.cvv = "Please enter a valid 3-digit CVV";
+      }
     }
 
     setErrors(newErrors);
@@ -76,15 +96,16 @@ const DonateMoney = () => {
     // Format card number with spaces
     if (name === "cardNumber") {
       const formatted =
+        value && typeof value === 'string' ?
         value
           .replace(/\s/g, "")
           .match(/.{1,4}/g)
-          ?.join(" ") || value;
+          ?.join(" ") || value : "";
       setFormData((prev) => ({ ...prev, [name]: formatted }));
     }
     // Format expiry date
     else if (name === "expiryDate") {
-      let formatted = value.replace(/\D/g, "");
+      let formatted = value && typeof value === 'string' ? value.replace(/\D/g, "") : "";
       if (formatted.length >= 2) {
         formatted = formatted.slice(0, 2) + "/" + formatted.slice(2, 4);
       }
@@ -109,9 +130,10 @@ const DonateMoney = () => {
     setLoading(true);
     try {
       // Only send name, phone, and donation amount to the backend
+      // Don't send card details as they should be handled by a proper payment gateway
       const donationData = {
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
+        name: (formData.name || "").toString().trim(),
+        phone: (formData.phone || "").toString().trim(),
         amount: parseFloat(formData.amount), // Convert to number
       };
 

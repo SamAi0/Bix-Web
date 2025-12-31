@@ -7,15 +7,29 @@ const mongoose = require("mongoose");
 const validateApplicantInput = (req, res, next) => {
   const { name, email, phoneNumber, companyId, jobId } = req.body;
 
+  // Validate data types
+  if (typeof name !== 'string' || typeof email !== 'string' || typeof phoneNumber !== 'string' || typeof companyId !== 'string' || typeof jobId !== 'string') {
+    return res.status(400).json({
+      message: "All fields must be strings",
+    });
+  }
+
   if (!name?.trim() || !email?.trim() || !phoneNumber?.trim()) {
     return res.status(400).json({
       message: "Name, email, and phone number are required",
     });
   }
 
+  // Sanitize and validate inputs
+  if (name.trim().length > 100 || email.trim().length > 100) {
+    return res.status(400).json({
+      message: "Name and email must be less than 100 characters",
+    });
+  }
+
   // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  if (!emailRegex.test(email.trim())) {
     return res.status(400).json({
       message: "Invalid email format",
     });
@@ -23,7 +37,7 @@ const validateApplicantInput = (req, res, next) => {
 
   // Basic phone validation (allows different formats but requires minimum length)
   const phoneRegex = /^\+?[\d\s-()]{8,}$/;
-  if (!phoneRegex.test(phoneNumber)) {
+  if (!phoneRegex.test(phoneNumber.trim())) {
     return res.status(400).json({
       message: "Invalid phone number format",
     });

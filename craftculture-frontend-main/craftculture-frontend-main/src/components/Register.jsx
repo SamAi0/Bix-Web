@@ -67,8 +67,14 @@ const Register = () => {
           userFriendlyError = "Please enter a valid email address.";
           break;
         default:
+          // Escape special characters to prevent XSS
           userFriendlyError =
-            "An unexpected error occurred. Please try again later.";
+            backendMessage
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#x27;");
       }
 
       setError(userFriendlyError);

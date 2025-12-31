@@ -104,11 +104,11 @@ const Checkout = () => {
     const expiryRegex = /^(0[1-9]|1[0-2])\/?([0-9]{2})$/;
     const cvvRegex = /^\d{3,4}$/;
 
-    if (!cardRegex.test(paymentDetails.cardNumber.replace(/\s/g, ""))) {
+    if (!paymentDetails.cardNumber || typeof paymentDetails.cardNumber !== 'string' || !cardRegex.test(paymentDetails.cardNumber.replace(/\s/g, ""))) {
       errors.cardNumber = "Invalid card number (16 digits required)";
     }
 
-    if (!expiryRegex.test(paymentDetails.expiryDate)) {
+    if (!paymentDetails.expiryDate || typeof paymentDetails.expiryDate !== 'string' || !expiryRegex.test(paymentDetails.expiryDate)) {
       errors.expiryDate = "Invalid expiry date (MM/YY format)";
     } else {
       // Check if expiry date is in the past
@@ -127,7 +127,7 @@ const Checkout = () => {
       }
     }
 
-    if (!cvvRegex.test(paymentDetails.cvv)) {
+    if (!paymentDetails.cvv || typeof paymentDetails.cvv !== 'string' || !cvvRegex.test(paymentDetails.cvv)) {
       errors.cvv = "Invalid CVV (3-4 digits required)";
     }
 
@@ -164,24 +164,24 @@ const Checkout = () => {
   const handlePaymentInputChange = (e) => {
     const { name, value } = e.target;
 
-    let formattedValue = value;
+    let formattedValue = value && typeof value === 'string' ? value : "";
 
     if (name === "expiryDate") {
       // Auto-insert slash after 2 digits
-      formattedValue = value
+      formattedValue = formattedValue
         .replace(/\D/g, "") // Remove non-digits
         .replace(/^(\d{2})/, "$1/") // Add slash after 2 digits
         .substring(0, 5); // Limit to MM/YY format
     } else if (name === "cardNumber") {
       // Add spaces every 4 digits for better readability
-      formattedValue = value
+      formattedValue = formattedValue
         .replace(/\D/g, "")
         .replace(/(\d{4})/g, "$1 ")
         .trim()
         .substring(0, 19);
     } else if (name === "cvv") {
       // Limit CVV to 4 digits
-      formattedValue = value.replace(/\D/g, "").substring(0, 4);
+      formattedValue = formattedValue.replace(/\D/g, "").substring(0, 4);
     }
 
     setPaymentDetails((prev) => ({
@@ -251,7 +251,19 @@ const Checkout = () => {
               },
       };
 
-      const response = await axios.post(`${API_URL}/api/orders`, orderData);
+      // Remove payment details from orderData for online payments
+      const { cardNumber, expiryDate, cvv, ...orderDataToSend } = orderData;
+      
+      // For online payments, we should use a proper payment gateway
+      // For now, we'll send minimal payment info to backend
+      if (orderData.paymentMethod === "Online") {
+        orderDataToSend.paymentDetails = {
+          status: "Pending",
+          method: "Online"
+        };
+      }
+      
+      const response = await axios.post(`${API_URL}/api/orders`, orderDataToSend);
 
       if (response.status === 201) {
         // Clear user's cart

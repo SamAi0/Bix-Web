@@ -7,15 +7,35 @@ const mongoose = require("mongoose");
 const validateProductDonationInput = (req, res, next) => {
   const { name, phone, category, quantity } = req.body;
 
+  // Validate data types
+  if (typeof name !== 'string' || typeof phone !== 'string' || typeof category !== 'string') {
+    return res.status(400).json({
+      message: "Name, phone number, and category must be strings",
+    });
+  }
+
+  if (typeof quantity !== 'number') {
+    return res.status(400).json({
+      message: "Quantity must be a number",
+    });
+  }
+
   if (!name?.trim() || !phone?.trim() || !category) {
     return res.status(400).json({
       message: "Name, phone number, and category are required",
     });
   }
 
+  // Sanitize and validate inputs
+  if (name.trim().length > 100 || phone.trim().length > 20) {
+    return res.status(400).json({
+      message: "Name must be less than 100 characters and phone must be less than 20 characters",
+    });
+  }
+
   // Basic phone validation
   const phoneRegex = /^\+?[\d\s-()]{8,}$/;
-  if (!phoneRegex.test(phone)) {
+  if (!phoneRegex.test(phone.trim())) {
     return res.status(400).json({
       message: "Invalid phone number format",
     });

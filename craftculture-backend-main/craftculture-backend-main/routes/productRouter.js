@@ -5,11 +5,26 @@ const mongoose = require("mongoose");
 
 // Input validation middleware
 const validateProductInput = (req, res, next) => {
-  const { name, price, quantity, category, status } = req.body;
+  const { name, price, quantity, category, status, offer } = req.body;
+
+  // Validate data types
+  if (typeof name !== 'string' || typeof category !== 'string' || typeof status !== 'string') {
+    return res.status(400).json({
+      message: "Product name, category, and status must be strings",
+    });
+  }
 
   if (!name?.trim()) {
     return res.status(400).json({
       message: "Product name is required",
+    });
+  }
+
+  // Sanitize name to prevent XSS
+  const sanitizedName = name.trim();
+  if (sanitizedName.length > 100) {
+    return res.status(400).json({
+      message: "Product name must be less than 100 characters",
     });
   }
 
@@ -48,12 +63,7 @@ const validateProductInput = (req, res, next) => {
     });
   }
 
-  if (
-    req.body.offer &&
-    (typeof req.body.offer !== "number" ||
-      req.body.offer < 0 ||
-      req.body.offer > 100)
-  ) {
+  if (offer !== undefined && (typeof offer !== "number" || offer < 0 || offer > 100)) {
     return res.status(400).json({
       message: "Offer must be a number between 0 and 100",
     });

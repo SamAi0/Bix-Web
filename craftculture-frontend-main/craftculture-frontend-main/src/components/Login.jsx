@@ -62,7 +62,13 @@ const Login = () => {
               "Your account has been disabled. Please contact support.";
             break;
           default:
-            errorMessage = error.response.data.message;
+            // Escape special characters to prevent XSS
+            errorMessage = error.response.data.message
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#x27;");
         }
       }
 

@@ -1,23 +1,34 @@
 import React from "react";
 import { Route, Navigate } from "react-router-dom";
-import AdminLayout from "./components/AdminLayout";
-import AdminDashboard from "./components/AdminDashboard";
-import AdminUsers from "./components/AdminUsers";
-import AdminProducts from "./components/AdminProducts";
-import AdminOrders from "./components/AdminOrders";
-import AdminJobs from "./components/AdminJobs";
-import AdminCompanies from "./components/AdminCompanies";
-import AdminApplicants from "./components/AdminApplicants";
-import AdminDonations from "./components/AdminDonations";
+import AdminLayout from "./AdminLayout";
+import AdminDashboard from "./AdminDashboard";
+import AdminUsers from "./AdminUsers";
+import AdminProducts from "./AdminProducts";
+import AdminOrders from "./AdminOrders";
+import AdminJobs from "./AdminJobs";
+import AdminCompanies from "./AdminCompanies";
+import AdminApplicants from "./AdminApplicants";
+import AdminDonations from "./AdminDonations";
 
 // Admin Route Guard Component
 const AdminRoute = ({ children }) => {
-  const userRole = localStorage.getItem("userRole");
-
-  if (!userRole || userRole !== "ADMIN") {
-    return <Navigate to="/login" />;
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+  
+  // Check if user is logged in and has admin role
+  if (!token || userRole !== 'ADMIN') {
+    // Clear any potentially invalid tokens
+    if (!token) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('email');
+    }
+    // Redirect to login if not authenticated or not an admin
+    return <Navigate to="/login" replace />;
   }
-
+  
+  // If user is authenticated and is an admin, render the children (protected component)
   return <AdminLayout>{children}</AdminLayout>;
 };
 

@@ -10,27 +10,38 @@ const SECRET = process.env.JWT_SECRET || "engineersurajsahani";
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader)
-      return res.status(401).send({ message: "No token provided" });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: "No valid token provided" });
+    }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, SECRET);
+    
+    // Verify user still exists in database
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: "User no longer exists" });
+    }
+    
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).send({ message: "Invalid token" });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: "Token has expired" });
+    }
+    res.status(401).json({ message: "Invalid token" });
   }
 };
 
 // Admin Authorization Middleware
 const isAdmin = async (req, res, next) => {
   try {
-    if (req.user.userRole !== "ADMIN") {
-      return res.status(403).send({ message: "Access denied. Admin only." });
+    if (!req.user || req.user.userRole !== "ADMIN") {
+      return res.status(403).json({ message: "Access denied. Admin only." });
     }
     next();
   } catch (error) {
-    res.status(403).send({ message: "Access denied" });
+    res.status(403).json({ message: "Access denied" });
   }
 };
 
@@ -94,14 +105,14 @@ router.post("/login", async (req, res) => {
 });
 
 // User Profile
-router.get("/profile", async (req, res) => {
+router.get("/profile", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).send({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.send(user);
+    res.json(user);
   } catch (error) {
-    res.status(401).send({ message: "Unauthorized" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -109,6 +120,14 @@ router.get("/profile", async (req, res) => {
 router.put("/profile", authenticateToken, async (req, res) => {
   try {
     const updates = { ...req.body };
+    
+    // Validate input data
+    if (updates.username && typeof updates.username !== 'string') {
+      return res.status(400).json({ message: "Username must be a string" });
+    }
+    if (updates.email && typeof updates.email !== 'string') {
+      return res.status(400).json({ message: "Email must be a string" });
+    }
     
     // Check if username or email is being updated
     if (updates.username || updates.email) {
@@ -119,12 +138,12 @@ router.put("/profile", authenticateToken, async (req, res) => {
 
       if (existingUser) {
         if (existingUser.username === updates.username) {
-          return res.status(400).send({ message: "Username is already taken" });
+          return res.status(400).json({ message: "Username is already taken" });
         }
         if (existingUser.email === updates.email) {
           return res
             .status(400)
-            .send({ message: "Email is already registered" });
+            .json({ message: "Email is already registered" });
         }
       }
     }
@@ -135,10 +154,10 @@ router.put("/profile", authenticateToken, async (req, res) => {
       { new: true }
     ).select("-password");
 
-    if (!user) return res.status(404).send({ message: "User not found" });
-    res.send(user);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
   } catch (error) {
-    res.status(400).send({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -240,12 +259,26 @@ router.delete("/:id", authenticateToken, isAdmin, async (req, res) => {
 router.post("/change-password", authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+    
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      return res.status(400).json({ message: "Passwords must be strings" });
+    }
+    
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+    
     const user = await User.findById(req.user.id);
 
     // Verify current password
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
-      return res.status(400).send({ message: "Current password is incorrect" });
+      return res.status(400).json({ message: "Current password is incorrect" });
     }
 
     // Hash and update new password
@@ -253,9 +286,9 @@ router.post("/change-password", authenticateToken, async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    res.send({ message: "Password updated successfully" });
+    res.json({ message: "Password updated successfully" });
   } catch (error) {
-    res.status(400).send({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 });
 

@@ -17,6 +17,18 @@ const validateOrderInput = (req, res, next) => {
     paymentMethod,
   } = req.body;
 
+  // Validate string inputs
+  if (
+    typeof username !== 'string' ||
+    typeof fullName !== 'string' ||
+    typeof email !== 'string' ||
+    typeof phone !== 'string'
+  ) {
+    return res.status(400).json({
+      message: "Customer information must be strings",
+    });
+  }
+
   if (
     !username?.trim() ||
     !fullName?.trim() ||
@@ -28,30 +40,54 @@ const validateOrderInput = (req, res, next) => {
     });
   }
 
-  if (!items?.length) {
+  // Validate username and fullName length
+  if (username.trim().length > 100 || fullName.trim().length > 100) {
+    return res.status(400).json({
+      message: "Username and full name must be less than 100 characters",
+    });
+  }
+
+  if (!items?.length || !Array.isArray(items)) {
     return res.status(400).json({
       message: "Order must contain at least one item",
     });
   }
 
-  if (!totalAmount || totalAmount <= 0) {
+  if (typeof totalAmount !== 'number' || totalAmount <= 0) {
     return res.status(400).json({
       message: "Invalid total amount",
     });
   }
 
+  if (!address || typeof address !== 'object') {
+    return res.status(400).json({
+      message: "Shipping address is required",
+    });
+  }
+
   if (
-    !address?.street ||
-    !address?.city ||
-    !address?.state ||
-    !address?.postalCode
+    typeof address.street !== 'string' ||
+    typeof address.city !== 'string' ||
+    typeof address.state !== 'string' ||
+    typeof address.postalCode !== 'string'
+  ) {
+    return res.status(400).json({
+      message: "Address fields must be strings",
+    });
+  }
+
+  if (
+    !address?.street?.trim() ||
+    !address?.city?.trim() ||
+    !address?.state?.trim() ||
+    !address?.postalCode?.trim()
   ) {
     return res.status(400).json({
       message: "Shipping address is incomplete",
     });
   }
 
-  if (!["Online", "COD"].includes(paymentMethod)) {
+  if (typeof paymentMethod !== 'string' || !["Online", "COD"].includes(paymentMethod)) {
     return res.status(400).json({
       message: "Invalid payment method",
     });
@@ -59,7 +95,7 @@ const validateOrderInput = (req, res, next) => {
 
   // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  if (!emailRegex.test(email.trim())) {
     return res.status(400).json({
       message: "Invalid email format",
     });
@@ -67,10 +103,31 @@ const validateOrderInput = (req, res, next) => {
 
   // Basic phone validation
   const phoneRegex = /^\+?[\d\s-()]{8,}$/;
-  if (!phoneRegex.test(phone)) {
+  if (!phoneRegex.test(phone.trim())) {
     return res.status(400).json({
       message: "Invalid phone number format",
     });
+  }
+
+  // Validate items array
+  for (const item of items) {
+    if (
+      typeof item._id !== 'string' ||
+      typeof item.name !== 'string' ||
+      typeof item.price !== 'number' ||
+      typeof item.quantity !== 'number' ||
+      typeof item.offer !== 'number'
+    ) {
+      return res.status(400).json({
+        message: "Invalid item format in order",
+      });
+    }
+
+    if (item.quantity <= 0 || item.offer < 0 || item.offer > 100) {
+      return res.status(400).json({
+        message: "Invalid item quantity or offer",
+      });
+    }
   }
 
   next();
@@ -275,12 +332,22 @@ router.patch("/:orderId/status", async (req, res) => {
   try {
     const { status, trackingNumber, notes } = req.body;
 
-    if (
-      !["Pending", "Processing", "Shipped", "Delivered", "Cancelled"].includes(
-        status
-      )
-    ) {
+    // Validate inputs
+    if (typeof status !== 'string' || !["Pending", "Processing", "Shipped", "Delivered", "Cancelled"].includes(status)) {
       return res.status(400).json({ message: "Invalid order status" });
+    }
+
+    if (trackingNumber && typeof trackingNumber !== 'string') {
+      return res.status(400).json({ message: "Tracking number must be a string" });
+    }
+
+    if (notes && typeof notes !== 'string') {
+      return res.status(400).json({ message: "Notes must be a string" });
+    }
+
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(req.params.orderId)) {
+      return res.status(400).json({ message: "Invalid order ID format" });
     }
 
     const order = await Order.findById(req.params.orderId);

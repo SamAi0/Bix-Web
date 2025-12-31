@@ -4,6 +4,23 @@ import { Link, useLocation } from "react-router-dom";
 const AdminLayout = ({ children }) => {
   const location = useLocation();
 
+  // Check if user is authenticated and has admin role
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+  
+  // If not authenticated or not an admin, redirect to login
+  if (!token || userRole !== 'ADMIN') {
+    // Clear any potentially invalid tokens
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('email');
+    
+    // Redirect to login by forcing page reload
+    window.location.href = '/login';
+    return null;
+  }
+
   const menuItems = [
     { path: "/admin", label: "Dashboard", icon: "fas fa-tachometer-alt" },
     { path: "/admin/users", label: "Users", icon: "fas fa-users" },
@@ -23,6 +40,23 @@ const AdminLayout = ({ children }) => {
       icon: "fas fa-gift",
     },
   ];
+
+  // Sanitize page title to prevent XSS
+  const getPageTitle = () => {
+    const pathParts = location.pathname.split("/");
+    const lastPart = pathParts[pathParts.length - 1];
+    if (!lastPart) return "Dashboard";
+    
+    // Sanitize the part to prevent XSS
+    const sanitized = lastPart
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;");
+      
+    return sanitized.charAt(0).toUpperCase() + sanitized.slice(1);
+  };
 
   return (
     <div className="container-fluid">
@@ -55,8 +89,7 @@ const AdminLayout = ({ children }) => {
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
           <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 className="h2">
-              {location.pathname.split("/").pop().charAt(0).toUpperCase() +
-                location.pathname.split("/").pop().slice(1)}
+              {getPageTitle()}
             </h1>
           </div>
           {children}

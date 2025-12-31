@@ -26,13 +26,42 @@ const Cart = () => {
         return;
       }
 
-      const cartData = JSON.parse(localStorage.getItem("cart")) || {};
-      const userCart = cartData[username] || [];
-      setCart(userCart);
-      calculateTotal(userCart);
+      const cartDataString = localStorage.getItem("cart");
+      if (!cartDataString) {
+        setCart([]);
+        calculateTotal([]);
+        return;
+      }
+      
+      const cartData = JSON.parse(cartDataString);
+      if (typeof cartData !== 'object' || cartData === null) {
+        // Reset cart if data is invalid
+        localStorage.setItem("cart", JSON.stringify({}));
+        setCart([]);
+        calculateTotal([]);
+        return;
+      }
+      
+      const userCart = Array.isArray(cartData[username]) ? cartData[username] : [];
+      // Validate cart items
+      const validCart = userCart.filter(item => 
+        item &&
+        typeof item === 'object' &&
+        typeof item.name === 'string' &&
+        typeof item.price === 'number' &&
+        typeof item.quantity === 'number' &&
+        item.quantity > 0
+      );
+      
+      setCart(validCart);
+      calculateTotal(validCart);
     } catch (err) {
       console.error("Error loading cart:", err);
-      setError("Error loading cart data. Please try again.");
+      // Reset cart if there's an error
+      localStorage.setItem("cart", JSON.stringify({}));
+      setCart([]);
+      calculateTotal([]);
+      setError("Error loading cart data. Cart has been reset.");
     }
   }, [navigate, calculateTotal]);
 
@@ -46,11 +75,30 @@ const Cart = () => {
       const username = localStorage.getItem("username");
       if (!username) return;
 
-      const cartData = JSON.parse(localStorage.getItem("cart")) || {};
+      // Validate index
+      if (index < 0 || index >= cart.length) return;
+      
+      // Validate change value
+      if (typeof change !== 'number' || !Number.isInteger(change)) return;
+      
+      const cartDataString = localStorage.getItem("cart");
+      const cartData = cartDataString ? JSON.parse(cartDataString) : {};
+      
+      if (typeof cartData !== 'object' || cartData === null) {
+        localStorage.setItem("cart", JSON.stringify({}));
+        return;
+      }
+      
       const updatedCart = [...cart];
-
+      
+      // Validate cart item
+      if (!updatedCart[index] || typeof updatedCart[index] !== 'object') return;
+      
       const newQuantity = (updatedCart[index].quantity || 1) + change;
       if (newQuantity < 1) return;
+      
+      // Prevent quantities that are too high
+      if (newQuantity > 99) return;
 
       updatedCart[index].quantity = newQuantity;
       cartData[username] = updatedCart;
@@ -68,10 +116,19 @@ const Cart = () => {
     try {
       const username = localStorage.getItem("username");
       if (!username) return;
+      
+      // Validate index
+      if (index < 0 || index >= cart.length) return;
 
-      const cartData = JSON.parse(localStorage.getItem("cart")) || {};
+      const cartDataString = localStorage.getItem("cart");
+      const cartData = cartDataString ? JSON.parse(cartDataString) : {};
+      
+      if (typeof cartData !== 'object' || cartData === null) {
+        localStorage.setItem("cart", JSON.stringify({}));
+        return;
+      }
+      
       const updatedCart = cart.filter((_, i) => i !== index);
-
       cartData[username] = updatedCart;
       setCart(updatedCart);
       localStorage.setItem("cart", JSON.stringify(cartData));

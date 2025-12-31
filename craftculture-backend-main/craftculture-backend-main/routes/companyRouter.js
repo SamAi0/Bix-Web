@@ -9,17 +9,28 @@ const SECRET = process.env.JWT_SECRET || "your-secret-key";
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: "No valid token provided" });
     }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, SECRET);
+    
+    // Verify user still exists in database
+    const User = require('../models/User');
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: "User no longer exists" });
+    }
+    
     req.user = decoded;
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: "Token has expired" });
+    }
     res.status(401).json({
-      message: "Invalid or expired token",
+      message: "Invalid token",
       error: error.message,
     });
   }
