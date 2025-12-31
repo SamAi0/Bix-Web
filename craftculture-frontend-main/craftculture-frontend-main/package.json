@@ -1,0 +1,51 @@
+{
+  "name": "craftculture-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@mui/icons-material": "^6.3.0",
+    "@mui/material": "^6.3.0",
+    "@react-pdf/renderer": "^4.1.6",
+    "axios": "^1.7.9",
+    "bootstrap": "^5.3.5",
+    "concurrently": "^9.2.1",
+    "cra-template": "1.2.0",
+    "emailjs-com": "^3.2.0",
+    "framer-motion": "^11.18.1",
+    "lucide-react": "^0.471.0",
+    "react": "^19.0.0",
+    "react-bootstrap": "^2.10.9",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.1",
+    "react-scripts": "5.0.1",
+    "react-toastify": "^11.0.2",
+    "web-vitals": "^4.2.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "dev": "react-scripts start",
+    "dev:full": "concurrently \"cd ../craftculture-backend-main/craftculture-backend-main && npm run dev\" \"react-scripts start\"",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:5000"
+}
