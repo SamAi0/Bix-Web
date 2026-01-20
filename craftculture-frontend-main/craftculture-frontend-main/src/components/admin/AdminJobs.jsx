@@ -36,7 +36,7 @@ const AdminJobs = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, selectedCompany, token]);
+  }, [selectedCompany]);
 
   useEffect(() => {
     fetchData();

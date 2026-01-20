@@ -36,10 +36,10 @@
     "offer": 12
   },
   {
-    "name": "PenStand5",
+    "name": "samai",
     "quantity": 40,
     "price": 12.00,
-    "image": "PenStand/penstand5.jpeg",
+    "image": "PenStand/samai.jpeg",
     "status": "Available",
     "category": "Pen Stand",
     "offer": 6

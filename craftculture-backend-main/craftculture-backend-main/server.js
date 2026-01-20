@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
+const User = require("./models/User");
+const bcrypt = require("bcrypt");
 const userRouter = require("./routes/userRouter");
 const productRouter = require("./routes/productRouter");
 const orderRouter = require("./routes/orderRouter");
@@ -36,5 +38,42 @@ app.use("/api/donate-money", donateMoneyRouter);
 app.use("/api/donate-product", donateProductRouter);
 app.use("/api/dashboard", dashboardRouter);
 
-// Start Server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Function to create default admin user if none exists
+const createDefaultAdmin = async () => {
+  try {
+    const adminCount = await User.countDocuments({ userRole: "ADMIN" });
+    
+    if (adminCount === 0) {
+      const hashedPassword = await bcrypt.hash("admin123", 10);
+      const adminUser = new User({
+        username: "admin",
+        email: "admin@craftculture.com",
+        password: hashedPassword,
+        userRole: "ADMIN"
+      });
+      
+      await adminUser.save();
+      console.log("Default admin user created:");
+      console.log("Username: admin");
+      console.log("Password: admin123");
+      console.log("Email: admin@craftculture.com");
+    } else {
+      console.log(`Found ${adminCount} admin user(s). Skipping default admin creation.`);
+    }
+  } catch (error) {
+    console.error("Error creating default admin user:", error);
+  }
+};
+
+// Connect to database and create default admin
+
+// Wait for database connection to be established
+db.once('open', async () => {
+  await createDefaultAdmin();
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
+
+// Handle connection errors
+db.on('error', (err) => {
+  console.error("Database connection error:", err);
+});

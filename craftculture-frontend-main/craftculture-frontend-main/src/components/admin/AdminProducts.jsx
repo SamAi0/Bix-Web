@@ -52,7 +52,7 @@ const AdminProducts = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, token]);
+  }, [filters.category, filters.searchTerm, filters.status, token]);
 
   useEffect(() => {
     fetchData();

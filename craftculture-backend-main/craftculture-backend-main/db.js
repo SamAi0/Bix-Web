@@ -7,10 +7,8 @@ if (!REMOTE_DB_URL) {
   process.exit(1);
 }
 
-mongoose.connect(REMOTE_DB_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// Connect to MongoDB without deprecated options
+mongoose.connect(REMOTE_DB_URL);
 const db = mongoose.connection;
 
 db.on("connected", function () {

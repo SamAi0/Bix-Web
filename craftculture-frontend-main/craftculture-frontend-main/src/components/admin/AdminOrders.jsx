@@ -18,8 +18,6 @@ const AdminOrders = () => {
     },
   });
 
-  const token = localStorage.getItem("token");
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -38,11 +36,11 @@ const AdminOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, filters.dateRange.end, filters.dateRange.start, filters.status, token]);
+  }, [filters.dateRange.end, filters.dateRange.start, filters.status]);
 
   useEffect(() => {
     fetchData();
-  }, [filters, fetchData]);
+  }, [JSON.stringify(filters), fetchData]);
 
   const handleStatusChange = (e) => {
     setFilters((prev) => ({
@@ -95,14 +93,14 @@ const AdminOrders = () => {
     ];
 
     const data = orders.map((order) => [
-      order._id,
-      order.fullName,
-      order.email,
-      order.phone,
-      order.totalAmount.toFixed(2),
-      order.status,
-      order.paymentMethod,
-      new Date(order.orderDate).toLocaleString(),
+      order._id || "N/A",
+      order.fullName || "N/A",
+      order.email || "N/A",
+      order.phone || "N/A",
+      (order.totalAmount || 0).toFixed(2),
+      order.status || "N/A",
+      order.paymentMethod || "N/A",
+      order.orderDate ? new Date(order.orderDate).toLocaleString() : "N/A",
     ]);
 
     const csvContent = [headers, ...data]
@@ -120,13 +118,17 @@ const AdminOrders = () => {
     {
       key: "_id",
       label: "Order ID",
-      render: (item) => item._id.substring(0, 8),
+      render: (item) => {
+        // Display last 8 characters of order ID for security
+        const orderId = item._id;
+        return orderId.length > 8 ? `...${orderId.substring(orderId.length - 8)}` : orderId;
+      },
     },
     { key: "fullName", label: "Customer" },
     {
       key: "totalAmount",
       label: "Total Amount",
-      render: (item) => `₹${item.totalAmount.toFixed(2)}`,
+      render: (item) => `₹${(item.totalAmount || 0).toFixed(2)}`,
     },
     {
       key: "status",
@@ -265,7 +267,7 @@ const AdminOrders = () => {
               ></button>
             </div>
             <div className="modal-body">
-              {selectedOrder && (
+              {selectedOrder ? (
                 <>
                   <div className="row mb-4">
                     <div className="col-md-6">
@@ -275,13 +277,13 @@ const AdminOrders = () => {
                             Customer Information
                           </h6>
                           <p className="mb-1">
-                            <strong>Name:</strong> {selectedOrder.fullName}
+                            <strong>Name:</strong> {selectedOrder.fullName || "N/A"}
                           </p>
                           <p className="mb-1">
-                            <strong>Email:</strong> {selectedOrder.email}
+                            <strong>Email:</strong> {selectedOrder.email || "N/A"}
                           </p>
                           <p className="mb-0">
-                            <strong>Phone:</strong> {selectedOrder.phone}
+                            <strong>Phone:</strong> {selectedOrder.phone || "N/A"}
                           </p>
                         </div>
                       </div>
@@ -292,13 +294,13 @@ const AdminOrders = () => {
                           <h6 className="card-subtitle mb-2 text-muted">
                             Shipping Address
                           </h6>
-                          <p className="mb-1">{selectedOrder.address.street}</p>
+                          <p className="mb-1">{selectedOrder.address?.street || "N/A"}</p>
                           <p className="mb-1">
-                            {selectedOrder.address.city},{" "}
-                            {selectedOrder.address.state}
+                            {selectedOrder.address?.city || "N/A"},{" "}
+                            {selectedOrder.address?.state || "N/A"}
                           </p>
                           <p className="mb-0">
-                            {selectedOrder.address.postalCode}
+                            {selectedOrder.address?.postalCode || "N/A"}
                           </p>
                         </div>
                       </div>
@@ -321,28 +323,28 @@ const AdminOrders = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {selectedOrder.items.map((item, index) => (
+                            {selectedOrder.items?.map((item, index) => (
                               <tr key={index}>
-                                <td>{item.name}</td>
-                                <td>₹{item.price.toFixed(2)}</td>
-                                <td>{item.quantity}</td>
+                                <td>{item.name || "N/A"}</td>
+                                <td>₹{(item.price || 0).toFixed(2)}</td>
+                                <td>{item.quantity || 0}</td>
                                 <td className="text-end">
                                   ₹
                                   {(
-                                    item.price *
-                                    item.quantity *
-                                    (1 - item.offer / 100)
+                                    (item.price || 0) *
+                                    (item.quantity || 0) *
+                                    (1 - (item.offer || 0) / 100)
                                   ).toFixed(2)}
                                 </td>
                               </tr>
-                            ))}
+                            )) || <tr><td colSpan="4" className="text-center">No items found</td></tr>}
                             <tr>
                               <td colSpan="3" className="text-end">
                                 <strong>Total Amount:</strong>
                               </td>
                               <td className="text-end">
                                 <strong>
-                                  ₹{selectedOrder.totalAmount.toFixed(2)}
+                                  ₹{(selectedOrder.totalAmount || 0).toFixed(2)}
                                 </strong>
                               </td>
                             </tr>
@@ -361,7 +363,7 @@ const AdminOrders = () => {
                           </h6>
                           <p className="mb-1">
                             <strong>Order Date:</strong>{" "}
-                            {new Date(selectedOrder.orderDate).toLocaleString()}
+                            {selectedOrder.orderDate ? new Date(selectedOrder.orderDate).toLocaleString() : "N/A"}
                           </p>
                           <p className="mb-1">
                             <strong>Status:</strong>{" "}
@@ -378,12 +380,12 @@ const AdminOrders = () => {
                                   : "bg-primary"
                               }`}
                             >
-                              {selectedOrder.status}
+                              {selectedOrder.status || "N/A"}
                             </span>
                           </p>
                           <p className="mb-1">
                             <strong>Payment Method:</strong>{" "}
-                            {selectedOrder.paymentMethod}
+                            {selectedOrder.paymentMethod || "N/A"}
                           </p>
                           {selectedOrder.trackingNumber && (
                             <p className="mb-0">
@@ -396,6 +398,10 @@ const AdminOrders = () => {
                     </div>
                   </div>
                 </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted">No order selected</p>
+                </div>
               )}
             </div>
             <div className="modal-footer">

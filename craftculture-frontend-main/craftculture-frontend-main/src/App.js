@@ -3,7 +3,6 @@ import {
   BrowserRouter as Router,
   Route,
   Routes,
-  Navigate,
 } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -35,7 +34,6 @@ import AdminJobs from "./components/admin/AdminJobs";
 import AdminCompanies from "./components/admin/AdminCompanies";
 import AdminApplicants from "./components/admin/AdminApplicants";
 import AdminDonations from "./components/admin/AdminDonations";
-import AdminLayout from "./components/admin/AdminLayout";
 
 
 

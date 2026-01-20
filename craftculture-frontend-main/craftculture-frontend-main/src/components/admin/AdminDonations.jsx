@@ -42,7 +42,7 @@ const AdminDonations = ({ type }) => {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, dateRange.end, dateRange.start, endpoint, selectedCategory, token]);
+  }, [dateRange.end, dateRange.start, endpoint, selectedCategory]);
 
   useEffect(() => {
     fetchDonations();
