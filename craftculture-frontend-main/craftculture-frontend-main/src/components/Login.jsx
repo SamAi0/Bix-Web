@@ -3,6 +3,7 @@ import axios from "axios";
 import { API_URL } from "../constant";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import FuturisticCAPTCHA from "./FuturisticCAPTCHA";
 import "../css/Login.css";
 
 const Login = () => {
@@ -13,14 +14,34 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
   };
 
+  const handleCaptchaSuccess = () => {
+    setCaptchaVerified(true);
+    setError("");
+  };
+
+  const handleCaptchaFailure = () => {
+    setCaptchaVerified(false);
+    setError("CAPTCHA verification failed. Please try again.");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if CAPTCHA is verified
+    if (!captchaVerified) {
+      setShowCaptcha(true);
+      setError("Please complete the CAPTCHA verification first.");
+      return;
+    }
+    
     setLoading(true);
     setError("");
 
@@ -75,6 +96,9 @@ const Login = () => {
       setError(errorMessage);
     } finally {
       setLoading(false);
+      // Reset CAPTCHA after login attempt
+      setCaptchaVerified(false);
+      setShowCaptcha(false);
     }
   };
 
@@ -179,6 +203,37 @@ const Login = () => {
                 />
               </div>
             </div>
+
+            {/* CAPTCHA Section */}
+            {showCaptcha && (
+              <motion.div
+                className="captcha-section"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="captcha-label">
+                  <i className="fas fa-shield-alt me-2"></i>
+                  Security Verification
+                </div>
+                <FuturisticCAPTCHA 
+                  onSuccess={handleCaptchaSuccess}
+                  onFailure={handleCaptchaFailure}
+                />
+                {captchaVerified && (
+                  <motion.div 
+                    className="captcha-verified"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <i className="fas fa-check-circle me-2"></i>
+                    CAPTCHA Verified!
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
 
             <motion.button
               type="submit"

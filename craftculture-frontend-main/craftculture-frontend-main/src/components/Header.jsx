@@ -77,11 +77,7 @@ const Header = () => {
                       <i className="fas fa-box-open me-1"></i>Products
                     </Link>
                   </li>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/jobs">
-                      <i className="fas fa-briefcase me-1"></i>Jobs
-                    </Link>
-                  </li>
+
                   <li className="nav-item">
                     <Link className="nav-link text-light fw-medium" to="/donate">
                       <i className="fas fa-hand-holding-heart me-1"></i>Donate
