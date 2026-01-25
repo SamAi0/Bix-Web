@@ -330,6 +330,13 @@ const AdminProducts = () => {
             <div className="col-auto">
               <div className="btn-group">
                 <button
+                  className="btn btn-info me-2"
+                  onClick={() => window.location.href = '/admin/products/bulk-upload'}
+                >
+                  <i className="fas fa-upload me-2"></i>
+                  Bulk Upload
+                </button>
+                <button
                   className="btn btn-success me-2"
                   onClick={handleExportCSV}
                   disabled={!products.length}

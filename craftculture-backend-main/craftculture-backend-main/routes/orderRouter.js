@@ -201,6 +201,12 @@ router.post("/", validateOrderInput, async (req, res) => {
       deliveryDate,
       status: "Pending",
       orderDate: new Date(),
+      statusHistory: [{
+        status: "Pending",
+        timestamp: new Date(),
+        updatedBy: 'system',
+        notes: 'Order created',
+      }],
     });
 
     await order.save();
@@ -376,6 +382,14 @@ router.patch("/:orderId/status", async (req, res) => {
     order.status = status;
     if (trackingNumber) order.trackingNumber = trackingNumber.trim();
     if (notes) order.notes = notes.trim();
+
+    // Add status change to history
+    order.statusHistory.push({
+      status: status,
+      timestamp: new Date(),
+      updatedBy: 'admin', // In a real app, this would be the admin's username
+      notes: notes || '',
+    });
 
     if (status === "Delivered") {
       order.deliveryDate = new Date();

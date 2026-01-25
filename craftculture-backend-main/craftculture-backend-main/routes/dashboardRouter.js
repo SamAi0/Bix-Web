@@ -46,6 +46,16 @@ router.get("/stats", async (req, res) => {
         },
       },
     ]);
+    
+    // Get order status distribution
+    const orderStatusDistribution = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
 
     // Get product statistics
     const productStats = await Product.aggregate([
@@ -108,6 +118,7 @@ router.get("/stats", async (req, res) => {
         averageOrderValue: 0,
         pendingOrders: 0,
       },
+      orderStatusDistribution: orderStatusDistribution,
       productStats: productStats[0] || {
         totalValue: 0,
         outOfStock: 0,

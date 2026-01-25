@@ -77,6 +77,24 @@ const orderSchema = new mongoose.Schema(
     notes: {
       type: String,
     },
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: ["Pending", "Processing", "Shipped", "Out for Delivery", "Delivered", "Cancelled"],
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+        updatedBy: {
+          type: String, // Could be admin username or 'system'
+        },
+        notes: {
+          type: String, // Any additional notes about the status change
+        },
+      },
+    ],
   },
   {
     timestamps: true,

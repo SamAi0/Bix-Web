@@ -2,19 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const Header = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
   const [cartCount, setCartCount] = useState(0);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUsername = localStorage.getItem("username");
-    if (token) {
-      setIsLoggedIn(true);
-      setUsername(storedUsername);
-    }
-    
     // Update cart count
     updateCartCount();
   }, []);
@@ -31,19 +21,26 @@ const Header = () => {
 
   const updateCartCount = () => {
     const cartData = JSON.parse(localStorage.getItem("cart") || "{}");
-    const userCart = cartData[localStorage.getItem("username")] || [];
+    const username = localStorage.getItem("username");
+    const userCart = cartData[username] || [];
     const count = userCart.reduce((total, item) => total + (item.quantity || 1), 0);
     setCartCount(count);
   };
 
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+  const username = localStorage.getItem('username');
+
+  const navigate = useNavigate();
+
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    setIsLoggedIn(false);
-    setUsername("");
-    setCartCount(0);
-    navigate("/login");
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('email');
+    navigate('/login');
   };
+
 
   return (
     <header>
@@ -70,56 +67,58 @@ const Header = () => {
                   <i className="fas fa-home me-1"></i>Home
                 </Link>
               </li>
-              {isLoggedIn && (
-                <>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/products">
-                      <i className="fas fa-box-open me-1"></i>Products
-                    </Link>
-                  </li>
+              <li className="nav-item">
+                <Link className="nav-link text-light fw-medium" to="/products">
+                  <i className="fas fa-box-open me-1"></i>Products
+                </Link>
+              </li>
 
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/donate">
-                      <i className="fas fa-hand-holding-heart me-1"></i>Donate
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/our-story">
-                      <i className="fas fa-book me-1"></i>Our Story
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/feedback">
-                      <i className="fas fa-comments me-1"></i>Feedback
-                    </Link>
-                  </li>
-                </>
-              )}
+              <li className="nav-item">
+                <Link className="nav-link text-light fw-medium" to="/donate">
+                  <i className="fas fa-hand-holding-heart me-1"></i>Donate
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link text-light fw-medium" to="/our-story">
+                  <i className="fas fa-book me-1"></i>Our Story
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link text-light fw-medium" to="/feedback">
+                  <i className="fas fa-comments me-1"></i>Feedback
+                </Link>
+              </li>
             </ul>
             <ul className="navbar-nav">
-              {isLoggedIn ? (
+              <li className="nav-item">
+                <Link className="nav-link text-light fw-medium" to="/cart">
+                  <i className="fas fa-shopping-cart me-1"></i>Cart {cartCount > 0 && (
+                    <span className="badge bg-light text-dark rounded-pill ms-1">{cartCount}</span>
+                  )}
+                </Link>
+              </li>
+              
+              {token ? (
                 <>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/cart">
-                      <i className="fas fa-shopping-cart me-1"></i>Cart {cartCount > 0 && (
-                        <span className="badge bg-light text-dark rounded-pill ms-1">{cartCount}</span>
-                      )}
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/order">
-                      <i className="fas fa-file-invoice me-1"></i>Orders
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link text-light fw-medium" to="/profile">
-                      <i className="fas fa-user me-1"></i>Hi, {username}
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <button className="nav-link btn btn-outline-light btn-sm rounded-pill px-3" onClick={handleLogout}>
-                      <i className="fas fa-sign-out-alt me-1"></i>Logout
+                  <li className="nav-item dropdown">
+                    <button className="nav-link dropdown-toggle text-light fw-medium border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i className="fas fa-user me-1"></i>{username}
                     </button>
+                    <ul className="dropdown-menu">
+                      <li><Link className="dropdown-item" to="/profile"><i className="fas fa-user-circle me-2"></i>Profile</Link></li>
+                      <li><Link className="dropdown-item" to="/wishlist"><i className="fas fa-heart me-2"></i>Wishlist</Link></li>
+                      <li><Link className="dropdown-item" to="/address-book"><i className="fas fa-address-book me-2"></i>Address Book</Link></li>
+                      <li><Link className="dropdown-item" to="/saved-carts"><i className="fas fa-save me-2"></i>Saved Carts</Link></li>
+                      <li><Link className="dropdown-item" to="/compare"><i className="fas fa-balance-scale me-2"></i>Compare Products</Link></li>
+                      {userRole === 'ADMIN' && (
+                        <>
+                          <li><hr className="dropdown-divider" /></li>
+                          <li><Link className="dropdown-item" to="/admin"><i className="fas fa-tachometer-alt me-2"></i>Admin Panel</Link></li>
+                        </>
+                      )}
+                      <li><hr className="dropdown-divider" /></li>
+                      <li><button className="dropdown-item" onClick={handleLogout}><i className="fas fa-sign-out-alt me-2"></i>Logout</button></li>
+                    </ul>
                   </li>
                 </>
               ) : (

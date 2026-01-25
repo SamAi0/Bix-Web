@@ -2,9 +2,8 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { JWT_SECRET } = require("../constants");
 const router = express.Router();
-
-const SECRET = process.env.JWT_SECRET || "engineersurajsahani";
 
 // Authentication Middleware
 const authenticateToken = async (req, res, next) => {
@@ -90,7 +89,7 @@ router.post("/login", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id, username: user.username, userRole: user.userRole },
-      SECRET,
+      JWT_SECRET,
       { expiresIn: "7d" }
     );
     res.send({

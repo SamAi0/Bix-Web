@@ -14,6 +14,7 @@ const Profile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
   const [editData, setEditData] = useState({
     username: "",
     email: ""
@@ -25,7 +26,7 @@ const Profile = () => {
   });
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-
+  
   const fetchUserProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -58,10 +59,135 @@ const Profile = () => {
       setLoading(false);
     }
   }, [navigate]);
-
+  
   useEffect(() => {
     fetchUserProfile();
   }, [fetchUserProfile]);
+  
+  const fetchOrderHistory = useCallback(async (username) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token || !username) {
+        navigate("/login");
+        return [];
+      }
+      
+      const response = await axios.get(`${API_URL}/api/orders/${username}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching order history:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        localStorage.removeItem("userRole");
+        navigate("/login");
+      }
+      return [];
+    }
+  }, [navigate]);
+
+  const OrderHistoryList = () => {
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    
+    useEffect(() => {
+      const loadOrders = async () => {
+        setLoading(true);
+        try {
+          const ordersData = await fetchOrderHistory(user.username);
+          setOrders(ordersData);
+        } catch (err) {
+          setError("Failed to load order history");
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      if (user.username) {
+        loadOrders();
+      }
+    }, [user.username]);
+
+    if (loading) {
+      return (
+        <div className="text-center py-3">
+          <div className="spinner-border spinner-border-sm text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-2 mb-0">Loading your order history...</p>
+        </div>
+      );
+    }
+    
+    if (error) {
+      return (
+        <div className="alert alert-danger">
+          {error}
+        </div>
+      );
+    }
+    
+    if (orders.length === 0) {
+      return (
+        <div className="text-center py-3">
+          <p className="mb-0 text-muted">You haven't placed any orders yet.</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="order-history-list">
+        <div className="table-responsive">
+          <table className="table table-striped">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Items</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.slice(0, 5).map((order) => (
+                <tr key={order._id}>
+                  <td>#{order._id.slice(-8)}</td>
+                  <td>{new Date(order.orderDate).toLocaleDateString()}</td>
+                  <td>
+                    <span className={`badge ${
+                      order.status === "Delivered" ? "bg-success" :
+                      order.status === "Cancelled" ? "bg-danger" :
+                      order.status === "Processing" ? "bg-warning" :
+                      order.status === "Shipped" ? "bg-info" :
+                      "bg-secondary"
+                    }`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td>₹{order.totalAmount.toFixed(2)}</td>
+                  <td>{order.items.length}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="text-center mt-3">
+          <button 
+            className="btn btn-outline-primary"
+            onClick={() => navigate("/order")}
+          >
+            View All Orders
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -154,6 +280,7 @@ const Profile = () => {
       return;
     }
 
+    setPasswordUpdating(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -184,6 +311,8 @@ const Profile = () => {
       console.error("Error changing password:", error);
       const errorMessage = error.response?.data?.message || "Failed to change password";
       toast.error(errorMessage);
+    } finally {
+      setPasswordUpdating(false);
     }
   };
 
@@ -274,6 +403,7 @@ const Profile = () => {
                         onChange={handleInputChange}
                         placeholder="Username"
                         className={`modern-input ${errors.username ? 'is-invalid' : ''}`}
+                        disabled={loading}
                       />
                       <div className="input-focus-effect"></div>
                     </div>
@@ -290,6 +420,7 @@ const Profile = () => {
                         onChange={handleInputChange}
                         placeholder="Email address"
                         className={`modern-input ${errors.email ? 'is-invalid' : ''}`}
+                        disabled={loading}
                       />
                       <div className="input-focus-effect"></div>
                     </div>
@@ -297,8 +428,8 @@ const Profile = () => {
                   </div>
 
                   <div className="form-actions">
-                    <button type="submit" className="btn btn-primary me-2">
-                      Save Changes
+                    <button type="submit" className="btn btn-primary me-2" disabled={loading}>
+                      {loading ? 'Saving...' : 'Save Changes'}
                     </button>
                     <button 
                       type="button" 
@@ -311,6 +442,7 @@ const Profile = () => {
                         });
                         setErrors({});
                       }}
+                      disabled={loading}
                     >
                       Cancel
                     </button>
@@ -320,21 +452,22 @@ const Profile = () => {
                 <div className="profile-details">
                   <div className="profile-field">
                     <label>Username:</label>
-                    <span>{user.username}</span>
+                    <span>{user.username || 'N/A'}</span>
                   </div>
                   <div className="profile-field">
                     <label>Email:</label>
-                    <span>{user.email}</span>
+                    <span>{user.email || 'N/A'}</span>
                   </div>
                   <div className="profile-field">
                     <label>Role:</label>
-                    <span className={`role-badge ${user.userRole.toLowerCase()}`}>
-                      {user.userRole}
+                    <span className={`role-badge ${user.userRole ? user.userRole.toLowerCase() : 'normal'}`}>
+                      {user.userRole || 'N/A'}
                     </span>
                   </div>
                   <button 
                     className="btn btn-primary edit-profile-btn"
                     onClick={() => setEditing(true)}
+                    disabled={loading}
                   >
                     <i className="fas fa-edit me-2"></i>Edit Profile
                   </button>
@@ -359,6 +492,7 @@ const Profile = () => {
                       onChange={handlePasswordChange}
                       placeholder="Current Password"
                       className={`modern-input ${errors.currentPassword ? 'is-invalid' : ''}`}
+                      disabled={passwordUpdating}
                     />
                     <div className="input-focus-effect"></div>
                   </div>
@@ -375,6 +509,7 @@ const Profile = () => {
                       onChange={handlePasswordChange}
                       placeholder="New Password"
                       className={`modern-input ${errors.newPassword ? 'is-invalid' : ''}`}
+                      disabled={passwordUpdating}
                     />
                     <div className="input-focus-effect"></div>
                   </div>
@@ -391,16 +526,26 @@ const Profile = () => {
                       onChange={handlePasswordChange}
                       placeholder="Confirm New Password"
                       className={`modern-input ${errors.confirmNewPassword ? 'is-invalid' : ''}`}
+                      disabled={passwordUpdating}
                     />
                     <div className="input-focus-effect"></div>
                   </div>
                   {errors.confirmNewPassword && <div className="error-text">{errors.confirmNewPassword}</div>}
                 </div>
 
-                <button type="submit" className="btn btn-primary">
-                  <i className="fas fa-key me-2"></i>Change Password
+                <button type="submit" className="btn btn-primary" disabled={passwordUpdating}>
+                  <i className="fas fa-key me-2"></i>{passwordUpdating ? 'Changing...' : 'Change Password'}
                 </button>
               </form>
+            </div>
+            
+            {/* Order History Section */}
+            <div className="profile-section">
+              <h4 className="section-title">
+                <i className="fas fa-shopping-cart me-2"></i>Order History
+              </h4>
+              
+              <OrderHistoryList />
             </div>
           </div>
         </div>

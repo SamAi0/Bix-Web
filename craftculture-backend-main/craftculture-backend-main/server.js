@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
+require("dotenv").config();
 const User = require("./models/User");
 const bcrypt = require("bcrypt");
 const userRouter = require("./routes/userRouter");
@@ -37,6 +38,7 @@ app.use("/api/applicants", applicantRouter);
 app.use("/api/donate-money", donateMoneyRouter);
 app.use("/api/donate-product", donateProductRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/reviews", require("./routes/reviewRouter"));
 
 // Function to create default admin user if none exists
 const createDefaultAdmin = async () => {

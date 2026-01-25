@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { API_URL } from "../constant";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import FuturisticCAPTCHA from "./FuturisticCAPTCHA";
 import "../css/Login.css";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -61,9 +62,9 @@ const Login = () => {
       setTimeout(() => {
         document.body.removeChild(toastContainer);
         if (response.data.userRole === "ADMIN") {
-          window.location.href = "/admin";
+          navigate("/admin");
         } else {
-          window.location.href = "/";
+          navigate("/");
         }
       }, 2000);
     } catch (error) {

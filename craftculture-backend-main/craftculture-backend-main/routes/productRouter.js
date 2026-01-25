@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
+const Order = require("../models/Order");
 const mongoose = require("mongoose");
 
 // Input validation middleware
@@ -325,6 +326,109 @@ router.patch("/:id/stock", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Error updating product stock",
+      error: error.message,
+    });
+  }
+});
+
+// Get Recently Purchased Products
+router.get("/recently-purchased", async (req, res) => {
+  try {
+    // Find recent orders that are delivered or out for delivery
+    const recentOrders = await Order.find({
+      status: { $in: ["Delivered", "Out for Delivery", "Shipped"] }
+    })
+    .sort({ orderDate: -1 })
+    .limit(50) // Get last 50 orders
+    .select("items orderDate");
+    
+    // Flatten all items from all orders
+    const allItems = [];
+    recentOrders.forEach(order => {
+      order.items.forEach(item => {
+        allItems.push({
+          ...item,
+          orderDate: order.orderDate
+        });
+      });
+    });
+    
+    // Group items by product ID and get most recent orders
+    const uniqueItems = [];
+    const seenIds = new Set();
+    
+    allItems.forEach(item => {
+      if (!seenIds.has(item._id)) {
+        seenIds.add(item._id);
+        uniqueItems.push(item);
+      }
+    });
+    
+    // Limit to top 10 most recently purchased items
+    const recentPurchases = uniqueItems.slice(0, 10);
+    
+    // Get full product details
+    const productIds = recentPurchases.map(item => item._id);
+    const products = await Product.find({ _id: { $in: productIds } });
+    
+    // Add purchase date information to each product
+    const productsWithDates = products.map(product => {
+      const recentItem = recentPurchases.find(item => item._id.toString() === product._id.toString());
+      return {
+        ...product.toObject(),
+        lastPurchased: recentItem ? recentItem.orderDate : null
+      };
+    });
+    
+    res.json(productsWithDates);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching recently purchased products",
+      error: error.message,
+    });
+  }
+});
+
+// Get Related Products (Customers who bought this also bought...)
+router.get("/:id/related", async (req, res) => {
+  try {
+    const productId = req.params.id;
+    
+    // First, get the current product to confirm it exists
+    const currentProduct = await Product.findById(productId);
+    if (!currentProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    
+    // Find orders that contain this product
+    const ordersWithProduct = await Order.find({
+      "items._id": productId,
+      status: { $in: ["Delivered", "Out for Delivery", "Shipped"] }
+    }).limit(50);
+    
+    // Extract all other product IDs from these orders
+    const otherProductIds = new Set();
+    ordersWithProduct.forEach(order => {
+      order.items.forEach(item => {
+        if (item._id.toString() !== productId) {
+          otherProductIds.add(item._id);
+        }
+      });
+    });
+    
+    // Convert Set back to Array and limit to 10 related products
+    const relatedProductIds = Array.from(otherProductIds).slice(0, 10);
+    
+    // Get the related products
+    const relatedProducts = await Product.find({
+      _id: { $in: relatedProductIds },
+      status: "Available" // Only show available products
+    });
+    
+    res.json(relatedProducts);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching related products",
       error: error.message,
     });
   }

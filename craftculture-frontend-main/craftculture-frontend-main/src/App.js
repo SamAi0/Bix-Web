@@ -22,6 +22,10 @@ import Company from "./components/Company";
 import Job from "./components/Job";
 import ApplyFormForJob from "./components/ApplyFormForJob";
 import Profile from "./components/Profile";
+import Wishlist from "./components/Wishlist";
+import SavedCarts from "./components/SavedCarts";
+import AddressBook from "./components/AddressBook";
+import ProductComparison from "./components/ProductComparison";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 
@@ -29,6 +33,7 @@ import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminUsers from "./components/admin/AdminUsers";
 import AdminProducts from "./components/admin/AdminProducts";
+import BulkProductUpload from "./components/admin/BulkProductUpload";
 import AdminOrders from "./components/admin/AdminOrders";
 import AdminJobs from "./components/admin/AdminJobs";
 import AdminCompanies from "./components/admin/AdminCompanies";
@@ -64,6 +69,10 @@ function App() {
           <Route path="/our-story" element={<OurStory />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+          <Route path="/saved-carts" element={<ProtectedRoute><SavedCarts /></ProtectedRoute>} />
+          <Route path="/address-book" element={<ProtectedRoute><AddressBook /></ProtectedRoute>} />
+          <Route path="/compare" element={<ProtectedRoute><ProductComparison /></ProtectedRoute>} />
 
           {/* Admin Routes */}
           <Route
@@ -87,6 +96,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminProducts />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/products/bulk-upload"
+            element={
+              <AdminRoute>
+                <BulkProductUpload />
               </AdminRoute>
             }
           />

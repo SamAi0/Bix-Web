@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../../constant";
 import { toast } from "react-toastify";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,43 @@ const AdminDashboard = () => {
       orders: [],
       applications: [],
     },
+    // New analytics data
+    monthlySales: [],
+    categoryDistribution: [],
+    userGrowth: [],
+    orderStatusDistribution: []
   });
+
+  // Sample data for charts (in real app, this would come from API)
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  
+  // Sample monthly sales data
+  const monthlySalesData = [
+    { month: 'Jan', sales: 4000 },
+    { month: 'Feb', sales: 3000 },
+    { month: 'Mar', sales: 2000 },
+    { month: 'Apr', sales: 2780 },
+    { month: 'May', sales: 1890 },
+    { month: 'Jun', sales: 2390 },
+  ];
+  
+  // Sample category distribution
+  const categoryData = [
+    { name: 'Frames', value: 400 },
+    { name: 'Wall Hanging', value: 300 },
+    { name: 'Bag', value: 300 },
+    { name: 'Jewellery', value: 200 },
+    { name: 'Others', value: 200 },
+  ];
+  
+  // Sample order status distribution
+  const orderStatusData = [
+    { name: 'Pending', value: 25 },
+    { name: 'Processing', value: 15 },
+    { name: 'Shipped', value: 40 },
+    { name: 'Delivered', value: 180 },
+    { name: 'Cancelled', value: 10 },
+  ];
 
   const fetchStats = async () => {
     setLoading(true);
@@ -137,8 +174,116 @@ const AdminDashboard = () => {
     );
   }
 
+  // Calculate order progress metrics
+  const totalOrders = stats.counts.orders;
+  const pendingOrders = stats.orderStats.pendingOrders;
+  const processingOrders = stats.orderStatusDistribution.find(item => item._id === "Processing")?.count || 0;
+  const shippedOrders = stats.orderStatusDistribution.find(item => item._id === "Shipped")?.count || 0;
+  const outForDeliveryOrders = stats.orderStatusDistribution.find(item => item._id === "Out for Delivery")?.count || 0;
+  const deliveredOrders = stats.orderStatusDistribution.find(item => item._id === "Delivered")?.count || 0;
+  const cancelledOrders = stats.orderStatusDistribution.find(item => item._id === "Cancelled")?.count || 0;
+  
+  // Determine status indicators
+  const activeOrders = processingOrders + shippedOrders + outForDeliveryOrders;
+  const stuckOrders = pendingOrders > 10 ? 'high' : pendingOrders > 5 ? 'medium' : 'low'; // Example logic
+  
   return (
     <div className="container-fluid px-4">
+      {/* Order Progress Summary - Prominent Top Section */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card border-start border-primary border-4 shadow-sm">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h4 className="card-title text-primary mb-1">
+                    <i className="fas fa-tachometer-alt me-2"></i>Order Progress Overview
+                  </h4>
+                  <p className="card-text text-muted mb-0">
+                    Real-time tracking of order workflow status across the platform
+                  </p>
+                </div>
+                <div className="text-end">
+                  <h3 className="text-dark mb-0">{totalOrders}</h3>
+                  <span className="text-muted">Total Orders</span>
+                </div>
+              </div>
+              
+              <div className="row mt-4">
+                <div className="col-md-2 col-6 mb-3 mb-md-0">
+                  <div className="text-center">
+                    <div className={`fs-4 fw-bold ${pendingOrders > 0 ? 'text-warning' : 'text-muted'}`}>
+                      {pendingOrders}
+                    </div>
+                    <div className="small text-muted">Pending</div>
+                  </div>
+                </div>
+                <div className="col-md-2 col-6 mb-3 mb-md-0">
+                  <div className="text-center">
+                    <div className={`fs-4 fw-bold ${processingOrders > 0 ? 'text-info' : 'text-muted'}`}>
+                      {processingOrders}
+                    </div>
+                    <div className="small text-muted">Processing</div>
+                  </div>
+                </div>
+                <div className="col-md-2 col-6 mb-3 mb-md-0">
+                  <div className="text-center">
+                    <div className={`fs-4 fw-bold ${shippedOrders > 0 ? 'text-primary' : 'text-muted'}`}>
+                      {shippedOrders}
+                    </div>
+                    <div className="small text-muted">Shipped</div>
+                  </div>
+                </div>
+                <div className="col-md-2 col-6 mb-3 mb-md-0">
+                  <div className="text-center">
+                    <div className={`fs-4 fw-bold ${outForDeliveryOrders > 0 ? 'text-warning' : 'text-muted'}`}>
+                      {outForDeliveryOrders}
+                    </div>
+                    <div className="small text-muted">Out for Delivery</div>
+                  </div>
+                </div>
+                <div className="col-md-2 col-6 mb-3 mb-md-0">
+                  <div className="text-center">
+                    <div className="fs-4 fw-bold text-success">
+                      {deliveredOrders}
+                    </div>
+                    <div className="small text-muted">Delivered</div>
+                  </div>
+                </div>
+                <div className="col-md-2 col-6 mb-3 mb-md-0">
+                  <div className="text-center">
+                    <div className="fs-4 fw-bold text-danger">
+                      {cancelledOrders}
+                    </div>
+                    <div className="small text-muted">Cancelled</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-3 pt-3 border-top">
+                <div className="d-flex justify-content-between">
+                  <div>
+                    <span className="me-3">
+                      <i className="fas fa-circle text-info me-1"></i>
+                      Active: <strong>{activeOrders}</strong> orders in progress
+                    </span>
+                    <span>
+                      <i className={`fas fa-circle ${stuckOrders === 'high' ? 'text-danger' : stuckOrders === 'medium' ? 'text-warning' : 'text-success'} me-1`}></i>
+                      Stuck: <strong>{pendingOrders}</strong> pending orders
+                    </span>
+                  </div>
+                  <div>
+                    <a href="/admin/orders" className="btn btn-primary">
+                      View All Orders <i className="fas fa-arrow-right ms-1"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Stat Cards */}
       <div className="row g-4 mb-4">
         {statCards.map((card, index) => (
@@ -255,6 +400,135 @@ const AdminDashboard = () => {
               ) : (
                 <p className="text-muted mb-0">No recent applications</p>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Charts */}
+      <div className="row mb-4">
+        <div className="col-md-8 mb-4">
+          <div className="card h-100">
+            <div className="card-header">
+              <h5 className="mb-0">Monthly Sales Trend</h5>
+            </div>
+            <div className="card-body">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlySalesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="sales" fill="#0088FE" name="Sales (₹)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md-4 mb-4">
+          <div className="card h-100">
+            <div className="card-header">
+              <h5 className="mb-0">Product Categories</h5>
+            </div>
+            <div className="card-body">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row mb-4">
+        <div className="col-md-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header">
+              <h5 className="mb-0">Order Status Distribution</h5>
+            </div>
+            <div className="card-body">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={orderStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                    label
+                  >
+                    {orderStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header">
+              <h5 className="mb-0">Performance Metrics</h5>
+            </div>
+            <div className="card-body">
+              <div className="row g-3">
+                <div className="col-6">
+                  <div className="border rounded p-3 text-center bg-light">
+                    <i className="fas fa-percentage fa-2x text-primary mb-2"></i>
+                    <h6 className="mb-1">Conversion Rate</h6>
+                    <h4 className="mb-0">3.2%</h4>
+                    <small className="text-muted">Last 30 days</small>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="border rounded p-3 text-center bg-light">
+                    <i className="fas fa-users fa-2x text-success mb-2"></i>
+                    <h6 className="mb-1">New Users</h6>
+                    <h4 className="mb-0">+127</h4>
+                    <small className="text-muted">This month</small>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="border rounded p-3 text-center bg-light">
+                    <i className="fas fa-star fa-2x text-warning mb-2"></i>
+                    <h6 className="mb-1">Avg. Rating</h6>
+                    <h4 className="mb-0">4.6/5</h4>
+                    <small className="text-muted">Overall</small>
+                  </div>
+                </div>
+                <div className="col-6">
+                  <div className="border rounded p-3 text-center bg-light">
+                    <i className="fas fa-sync-alt fa-2x text-info mb-2"></i>
+                    <h6 className="mb-1">Repeat Customers</h6>
+                    <h4 className="mb-0">68%</h4>
+                    <small className="text-muted">Retention rate</small>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

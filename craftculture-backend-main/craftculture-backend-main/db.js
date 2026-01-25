@@ -7,8 +7,9 @@ if (!REMOTE_DB_URL) {
   process.exit(1);
 }
 
-// Connect to MongoDB without deprecated options
-mongoose.connect(REMOTE_DB_URL);
+mongoose.connect(REMOTE_DB_URL, {
+  // Modern connection options
+});
 const db = mongoose.connection;
 
 db.on("connected", function () {

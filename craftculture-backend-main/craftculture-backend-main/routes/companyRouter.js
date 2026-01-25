@@ -2,8 +2,7 @@ const express = require("express");
 const Company = require("../models/Company");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-
-const SECRET = process.env.JWT_SECRET || "your-secret-key";
+const { JWT_SECRET } = require("../constants");
 
 // Authentication Middleware
 const authenticateToken = async (req, res, next) => {
@@ -14,7 +13,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     
     // Verify user still exists in database
     const User = require('../models/User');
