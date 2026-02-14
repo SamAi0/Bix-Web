@@ -3,6 +3,7 @@ import axios from "axios";
 import { API_URL } from "../constant";
 import { useNavigate, Link } from "react-router-dom";
 import ProductReviews from "./ProductReviews";
+import "../css/Product.css";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -244,8 +245,22 @@ const Product = () => {
                     alt={product.name}
                     style={{ height: "100px", width: "100px", objectFit: "cover" }}
                     onError={(e) => {
+                      console.log(`Failed to load recent product image: ${product.image}`);
                       e.target.onerror = null;
-                      e.target.src = `${process.env.PUBLIC_URL}/images/home.png`;
+                      const fallbackImages = [
+                        `${process.env.PUBLIC_URL}/images/home.png`,
+                        `${process.env.PUBLIC_URL}/images/parallex.png`
+                      ];
+                      let fallbackIndex = 0;
+                      const tryNextFallback = () => {
+                        if (fallbackIndex < fallbackImages.length) {
+                          e.target.src = fallbackImages[fallbackIndex];
+                          fallbackIndex++;
+                        } else {
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKAk0ltYWdlPC90ZXh0Pjwvc3ZnPg==';
+                        }
+                      };
+                      tryNextFallback();
                     }}
                   />
                   <div className="card-body p-2">
@@ -379,22 +394,59 @@ const Product = () => {
         {filteredProducts.map((product) => (
           <div key={product._id} className="col-md-4">
             <div className="card h-100 shadow-sm hover-shadow">
-              <img
-                src={`${process.env.PUBLIC_URL}/images/products/${product.image}`}
-                className="card-img-top"
-                alt={product.name}
-                style={{ height: "200px", objectFit: "cover" }}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `${process.env.PUBLIC_URL}/images/home.png`;
-                }}
-              />
-              <div className="card-body d-flex flex-column">
-                <h5 className="card-title">{product.name}</h5>
-                <p className="card-text">Price: ₹{product.price}</p>
+              <div className="product-image-container">
+                {product.offer > 0 && (
+                  <span className="product-badge offer-badge">
+                    {product.offer}% OFF
+                  </span>
+                )}
+                {product.status === "Not Available" && (
+                  <span className="product-badge out-of-stock-badge">
+                    OUT OF STOCK
+                  </span>
+                )}
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/products/${product.image}`}
+                  className="card-img-top"
+                  alt={product.name}
+                  style={{ height: "200px", objectFit: "cover" }}
+                  onError={(e) => {
+                    console.log(`Failed to load image: ${product.image}`);
+                    e.target.onerror = null;
+                    // Try alternative image paths
+                    const fallbackImages = [
+                      `${process.env.PUBLIC_URL}/images/home.png`,
+                      `${process.env.PUBLIC_URL}/images/parallex.png`,
+                      `${process.env.PUBLIC_URL}/images/donate.png`
+                    ];
+                    let fallbackIndex = 0;
+                    const tryNextFallback = () => {
+                      if (fallbackIndex < fallbackImages.length) {
+                        e.target.src = fallbackImages[fallbackIndex];
+                        fallbackIndex++;
+                      } else {
+                        // If all fallbacks fail, show a placeholder
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKAk0ltYWdlIE5vdCBGb3VuZOKApiA8L3RleHQ+PC9zdmc+';
+                      }
+                    };
+                    tryNextFallback();
+                  }}
+                />
+              </div>
+              <div className="card-body d-flex flex-column product-info">
+                <h5 className="card-title product-title">{product.name}</h5>
+                <div className="product-price-section">
+                  <p className="product-price">
+                    ₹{product.price}
+                    {product.comparePrice && product.comparePrice > product.price && (
+                      <span className="original-price">₹{product.comparePrice}</span>
+                    )}
+                  </p>
+                </div>
                 {product.offer > 0 && (
                   <p className="card-text text-danger">
-                    Offer: {product.offer}% off
+                    <i className="fas fa-tag me-1"></i>
+                    Special Offer: {product.offer}% off
                   </p>
                 )}
                 <p
@@ -404,6 +456,7 @@ const Product = () => {
                       : "text-danger"
                   }`}
                 >
+                  <i className={`fas ${product.status === "Available" ? 'fa-check-circle' : 'fa-times-circle'} me-1`}></i>
                   {product.status}
                 </p>
                 <div className="d-flex gap-2 mt-auto">
@@ -455,8 +508,23 @@ const Product = () => {
                       alt={selectedProduct.name}
                       style={{ width: '100%', height: '300px', objectFit: 'cover' }}
                       onError={(e) => {
+                        console.log(`Failed to load modal product image: ${selectedProduct.image}`);
                         e.target.onerror = null;
-                        e.target.src = `${process.env.PUBLIC_URL}/images/home.png`;
+                        const fallbackImages = [
+                          `${process.env.PUBLIC_URL}/images/home.png`,
+                          `${process.env.PUBLIC_URL}/images/parallex.png`,
+                          `${process.env.PUBLIC_URL}/images/donate.png`
+                        ];
+                        let fallbackIndex = 0;
+                        const tryNextFallback = () => {
+                          if (fallbackIndex < fallbackImages.length) {
+                            e.target.src = fallbackImages[fallbackIndex];
+                            fallbackIndex++;
+                          } else {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuKAk0ltYWdlIE5vdCBGb3VuZOKApiA8L3RleHQ+PC9zdmc+';
+                          }
+                        };
+                        tryNextFallback();
                       }}
                     />
                   </div>
