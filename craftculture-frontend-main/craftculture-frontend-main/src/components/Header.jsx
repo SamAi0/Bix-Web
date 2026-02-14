@@ -120,6 +120,21 @@ const Header = () => {
                       <li><button className="dropdown-item" onClick={handleLogout}><i className="fas fa-sign-out-alt me-2"></i>Logout</button></li>
                     </ul>
                   </li>
+                  {userRole === 'ADMIN' && (
+                    <li className="nav-item ms-2">
+                      <Link className="btn btn-light btn-sm rounded-pill px-3" to="/admin">
+                        <i className="fas fa-tachometer-alt me-1"></i>Dashboard
+                      </Link>
+                    </li>
+                  )}
+                  <li className="nav-item ms-2">
+                    <button 
+                      className="btn btn-outline-light btn-sm rounded-pill px-3" 
+                      onClick={handleLogout}
+                    >
+                      <i className="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                  </li>
                 </>
               ) : (
                 <>
